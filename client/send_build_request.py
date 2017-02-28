@@ -1,11 +1,12 @@
 #!/usr/bin/env python
 
-import beanstalkc
 import json
 import sys
 
-print "Getting build details from jenkins"
-build_details = {}
+import beanstalkc
+
+print("Getting build details from jenkins")
+build_details = dict()
 build_details["action"] = "start_build"
 build_details["appid"] = sys.argv[1]
 build_details["jobid"] = sys.argv[2]
@@ -16,8 +17,8 @@ build_details["target_file"] = sys.argv[6]
 build_details["notify_email"] = sys.argv[7]
 build_details["depends_on"] = sys.argv[8]
 
-print "Pushing bild details in the tube"
+print("Pushing build details in the tube")
 bs = beanstalkc.Connection(host="BEANSTALK_SERVER")
 bs.use("master_tube")
 bs.put(json.dumps(build_details))
-print "build details is pushed to master tube"
+print("build details is pushed to master tube")

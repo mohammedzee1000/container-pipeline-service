@@ -1,13 +1,13 @@
 #!/usr/bin/env python
 
-import beanstalkc
 import glob
 import json
 import os
 import subprocess
 import sys
-import yaml
 
+import beanstalkc
+import yaml
 
 # connect to beanstalkd tube
 bs = beanstalkc.Connection("BEANSTALK_SERVER")
@@ -32,7 +32,7 @@ files = glob.glob("%s/*.yml" % index_dir)
 
 # index dir will always have yml files only; but just in case
 for f in files:
-    if f.endswith(".yml"):
+    if f.endswith(".yml") and "index_template" not in f:
         continue
     files.remove(f)
 
@@ -61,13 +61,13 @@ for f in files:
                 "action": "start_scan",
                 "tag": desired_tag,
                 "name_space": str(app_id) + "-" + str(job_id) + "-" +
-                str(desired_tag),
+                              str(desired_tag),
                 "name": "%s:5000/%s/%s:%s" %
-                (registry, app_id, job_id, desired_tag),
+                        (registry, app_id, job_id, desired_tag),
                 "notify_email": email,
                 "weekly": True
             }
 
             job = bs.put(json.dumps(data))
             print "Image %s sent for weekly scan with data %s" % \
-                (entry_short_name, data)
+                  (entry_short_name, data)
