@@ -1,14 +1,15 @@
 #!/usr/bin/env python
 
-import beanstalkc
 import json
-from subprocess import Popen
-from subprocess import PIPE
-import re
-import time
 import logging
-import sys
 import os
+import re
+import sys
+import time
+from subprocess import PIPE
+from subprocess import Popen
+
+import beanstalkc
 
 bs = beanstalkc.Connection(host="BEANSTALK_SERVER")
 bs.watch("start_build")
@@ -31,29 +32,31 @@ kubeconfig = " --config=" + os.path.join(config_path, "node.kubeconfig")
 DEBUG = 1
 DELAY = 30
 
+
 def debug_log(msg):
     if DEBUG == 1:
         logger.log(level=logging.DEBUG, msg=msg)
 
 
 def run_command(command):
-    debug_log("Running command: "+command)
+    debug_log("Running command: " + command)
     try:
         p = Popen(command, bufsize=0, shell=True,
-              stdout=PIPE, stderr=PIPE, stdin=PIPE)
+                  stdout=PIPE, stderr=PIPE, stdin=PIPE)
         p.wait()
-        out,err = p.communicate()
+        out, err = p.communicate()
         return out
     except Exception as e:
         logger.log(level=logging.CRITICAL, msg=e.message)
         return e.message
+
 
 def notify_build_failure(namespace, notify_email, log_command):
     msg_details = {}
     msg_details['action'] = 'notify_user'
     msg_details['subject'] = "FAILED: Container-build failed " + namespace
     msg_details['msg'] = "Container build for " + namespace + \
-        " is failed due to error in build or test steps. Pleae check attached logs"
+                         " is failed due to error in build or test steps. Pleae check attached logs"
     try:
         logs = run_command(log_command)
     except Exception as e:
@@ -73,12 +76,12 @@ def start_build(job_details):
         jobid = job_details['jobid']
         desired_tag = job_details['desired_tag']
         namespace = appid + "-" + jobid + "-" + desired_tag
-        #depends_on = job_details['depends_on']
+        # depends_on = job_details['depends_on']
         notify_email = job_details['notify_email']
 
         debug_log("Login to OpenShift server")
         command_login = "oc login https://OPENSHIFT_SERVER_IP:8443 -u test-admin -p test" + \
-            kubeconfig + " --certificate-authority=" + config_path + "/ca.crt"
+                        kubeconfig + " --certificate-authority=" + config_path + "/ca.crt"
         out = run_command(command_login)
         debug_log(out)
 
@@ -89,7 +92,7 @@ def start_build(job_details):
 
         debug_log("start the build")
         command_start_build = "oc --namespace " + namespace + \
-            " start-build build" + kubeconfig
+                              " start-build build" + kubeconfig
         out = run_command(command_start_build)
         debug_log(out)
 
@@ -104,7 +107,7 @@ def start_build(job_details):
         debug_log("build started is " + build_details)
 
         status_command = "oc get --namespace " + namespace + " build/" + \
-            build_details + kubeconfig + "|grep -v STATUS"
+                         build_details + kubeconfig + "|grep -v STATUS"
         is_running = 1
 
         debug_log("Checking the build status")
@@ -118,7 +121,7 @@ def start_build(job_details):
 
         # checking logs for the build phase
         log_command = "oc logs --namespace " + namespace + " build/" + \
-            build_details + kubeconfig
+                      build_details + kubeconfig
 
         if is_complete < 0:
             bs.put(json.dumps(job_details))
@@ -132,11 +135,13 @@ def start_build(job_details):
         logger.log(level=logging.CRITICAL, msg=e.message)
         return 1
 
+
 while True:
     try:
         debug_log("listening to start_build tube")
-        current_jobs_in_tube = int(dict(item.split(":") for item in bs.stats_tube('start_build').split('\n')[1:-1])['current-jobs-ready'])
-        if current_jobs_in_tube > 0 :
+        current_jobs_in_tube = int(
+            dict(item.split(":") for item in bs.stats_tube('start_build').split('\n')[1:-1])['current-jobs-ready'])
+        if current_jobs_in_tube > 0:
             job = bs.reserve()
             job_details = json.loads(job.body)
             result = start_build(job_details)

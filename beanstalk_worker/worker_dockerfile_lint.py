@@ -1,11 +1,12 @@
 #!/usr/bin/python
 
-import beanstalkc
 import json
 import logging
 import os
 import subprocess
 import sys
+
+import beanstalkc
 
 logger = logging.getLogger("cccp-linter")
 logger.setLevel(logging.DEBUG)

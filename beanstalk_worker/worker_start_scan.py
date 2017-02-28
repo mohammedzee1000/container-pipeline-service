@@ -1,7 +1,5 @@
 #!/usr/bin/python
 
-import beanstalkc
-import docker
 import json
 import logging
 import os
@@ -9,7 +7,10 @@ import shutil
 import subprocess
 import sys
 
+import docker
 from Atomic import Atomic, mount
+
+import beanstalkc
 from scanner import Scanner
 
 DOCKER_HOST = "127.0.0.1"
@@ -28,10 +29,10 @@ ch.setFormatter(formatter)
 logger.addHandler(ch)
 
 SCANNERS_OUTPUT = {
-        "registry.centos.org/pipeline-images/pipeline-scanner": [
-            "image_scan_results.json"],
-        "registry.centos.org/pipeline-images/scanner-rpm-verify": [
-            "RPMVerify.json"]}
+    "registry.centos.org/pipeline-images/pipeline-scanner": [
+        "image_scan_results.json"],
+    "registry.centos.org/pipeline-images/scanner-rpm-verify": [
+        "RPMVerify.json"]}
 
 try:
     # docker client connection to CentOS 7 system
@@ -64,8 +65,8 @@ class ScannerRunner(object):
         Pulls image under test on test run host
         """
         logger.log(
-                level=logging.INFO,
-                msg="Pulling image %s" % image_under_test)
+            level=logging.INFO,
+            msg="Pulling image %s" % image_under_test)
         pull_data = conn.pull(
             repository=image_under_test
         )
@@ -144,8 +145,8 @@ class ScannerRunner(object):
 
         # after all scanners are ran, remove the image
         logger.log(
-                level=logging.INFO,
-                msg="Removing the image: %s" % image_under_test)
+            level=logging.INFO,
+            msg="Removing the image: %s" % image_under_test)
 
         conn.remove_image(image=image_under_test, force=True)
 
@@ -158,6 +159,7 @@ class ScannerRPMVerify(object):
     """
     scanner-rpm-verify atomic scanner handler
     """
+
     def __init__(self):
         self.scanner_name = "scanner-rpm-verify"
         self.full_scanner_name = "registry.centos.org/pipeline-images/scanner-rpm-verify"
@@ -233,6 +235,7 @@ class PipelineScanner(object):
     """
     pipeline-scanner atomic scanner handler
     """
+
     def __init__(self):
         self.scanner_name = "pipeline-scanner"
         self.full_scanner_name = "registry.centos.org/pipeline-images/pipeline-scanner"
@@ -260,20 +263,20 @@ class PipelineScanner(object):
             os.makedirs(self.image_rootfs_path)
         except OSError as error:
             logger.log(
-                    level=logging.WARNING,
-                    msg=str(error)
-                    )
+                level=logging.WARNING,
+                msg=str(error)
+            )
             logger.log(
-                    level=logging.INFO,
-                    msg="Unmounting and removing directory %s " % self.image_rootfs_path
-                    )
+                level=logging.INFO,
+                msg="Unmounting and removing directory %s " % self.image_rootfs_path
+            )
             try:
                 self.mount_object.unmount()
             except Exception as e:
                 logger.log(
                     level=logging.WARNING,
                     msg="Failed to unmount path= %s - Error: %s" % (self.image_rootfs_path, str(e))
-                    )
+                )
             else:
                 try:
                     shutil.rmtree(self.image_rootfs_path)
@@ -289,7 +292,7 @@ class PipelineScanner(object):
                 logger.log(
                     level=logging.FATAL,
                     msg=str(error)
-                        )
+                )
                 # fail! and return
                 return False
 
@@ -323,7 +326,7 @@ class PipelineScanner(object):
             logger.log(
                 level=logging.WARNING,
                 msg="Error removing image rootfs path. %s" % str(error)
-                )
+            )
         logger.log(
             level=logging.INFO,
             msg="Removing the image %s" % self.image_under_test)
@@ -353,13 +356,13 @@ class PipelineScanner(object):
         logger.log(
             level=logging.INFO,
             msg="Executing atomic scan:  %s" % " ".join(cmd)
-            )
+        )
 
         process = subprocess.Popen(
             cmd,
             stderr=subprocess.PIPE,
             stdout=subprocess.PIPE
-            )
+        )
 
         out, err = process.communicate()
 
@@ -464,9 +467,9 @@ class MiscPackageUpdates(Scanner):
 
         return data
 
+
 bs = beanstalkc.Connection(host=BEANSTALKD_HOST)
 bs.watch("start_scan")
-
 
 while True:
     try:
@@ -485,7 +488,7 @@ while True:
         logger.log(
             level=logging.INFO,
             msg="Job moved from scan phase, id: %s" % job_id
-            )
+        )
         job.delete()
     except Exception as e:
         logger.log(level=logging.FATAL, msg=str(e))

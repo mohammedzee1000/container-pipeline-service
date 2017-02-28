@@ -1,14 +1,15 @@
 #!/usr/bin/env python
 
-import beanstalkc
 import json
-from subprocess import Popen
-from subprocess import PIPE
-import re
-import time
 import logging
-import sys
 import os
+import re
+import sys
+import time
+from subprocess import PIPE
+from subprocess import Popen
+
+import beanstalkc
 
 bs = beanstalkc.Connection(host="BEANSTALK_SERVER")
 bs.watch("start_delivery")
@@ -36,7 +37,7 @@ def notify_build_failure(name_space, notify_email, logs):
     msg_details['action'] = 'notify_user'
     msg_details['subject'] = "FAILED: Container-build failed " + name_space
     msg_details['msg'] = "Container build " + name_space + \
-        " failed due to error in build or test steps. Pleae check attached logs"
+                         " failed due to error in build or test steps. Pleae check attached logs"
     msg_details['logs'] = logs
     msg_details['notify_email'] = notify_email
     bs.use('master_tube')
@@ -66,12 +67,12 @@ def start_delivery(job_details):
         name_space = job_details['name_space']
         notify_email = job_details['notify_email']
 
-        #tag = job_details['tag']
-        #depends_on = job_details['depends_on']
+        # tag = job_details['tag']
+        # depends_on = job_details['depends_on']
 
         debug_log("Login to OpenShift server")
         command_login = "oc login https://OPENSHIFT_SERVER_IP:8443 -u test-admin -p test" + \
-            kubeconfig + " --certificate-authority=" + config_path + "/ca.crt"
+                        kubeconfig + " --certificate-authority=" + config_path + "/ca.crt"
         out = run_command(command_login)
         debug_log(out)
 
@@ -82,7 +83,7 @@ def start_delivery(job_details):
 
         debug_log("start the delivery")
         command_start_build = "oc --namespace " + name_space + \
-            " start-build delivery" + kubeconfig
+                              " start-build delivery" + kubeconfig
         out = run_command(command_start_build)
         debug_log(out)
 
@@ -97,7 +98,7 @@ def start_delivery(job_details):
         debug_log("Delivery started is " + build_details)
 
         status_command = "oc get --namespace " + name_space + " build/" + \
-            build_details + kubeconfig + "|grep -v STATUS"
+                         build_details + kubeconfig + "|grep -v STATUS"
         is_running = 1
 
         debug_log("Checking the delivery status")
@@ -110,7 +111,7 @@ def start_delivery(job_details):
         is_complete = run_command(status_command)[0].find('Complete')
         # checking logs for the build phase
         log_command = "oc logs --namespace " + name_space + " build/" + \
-            build_details + kubeconfig
+                      build_details + kubeconfig
         logs = run_command(log_command)
         logs = logs[0]
 
@@ -124,6 +125,7 @@ def start_delivery(job_details):
     except Exception as e:
         logger.log(level=logging.CRITICAL, msg=e.message)
         return 1
+
 
 while True:
     try:
