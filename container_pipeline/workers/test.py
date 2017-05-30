@@ -16,7 +16,7 @@ class TestWorker(BaseWorker):
         super(TestWorker, self).__init__(logger, sub, pub)
         self.openshift = Openshift(logger=self.logger)
 
-    def test(self, job):
+    def run_test(self, job):
         """Run Openshift test build for job, which runs the user defined tests."""
         namespace = get_job_name(job)
         project = hashlib.sha224(namespace).hexdigest()
@@ -63,7 +63,7 @@ class TestWorker(BaseWorker):
     def handle_job(self, job):
         """This runs the test worker"""
         self.logger.info('Starting test for job: {}'.format(job))
-        success = self.test(job)
+        success = self.run_test(job)
 
         if success:
             self.handle_test_success(job)
