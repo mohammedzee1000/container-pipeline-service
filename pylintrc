@@ -1,0 +1,48 @@
+[MASTER]
+# Dont profile tests
+profile=no
+
+# Ignore tests against
+ignore=.git
+
+# Dont pickle data for later comparison
+persistent=no
+
+[REPORTS]
+# Set output format
+output-format=colorized
+
+# Include message ids in output
+include-ids=yes
+
+# Display full report
+reports=yes
+
+[VARIABLES]
+# Check for unused imports in __init__ files.
+init-import=yes
+
+
+[TYPECHECK]
+# Missing members in mixin classes, should be ignored
+ignore-mixin-members=yes
+
+# When zope mode is activated, consider the acquired-members option to ignore
+# access to some undefined attributes.
+zope=no
+
+# List of members which are usually get through zope's acquisition mecanism and
+# so shouldn't trigger E0201 when accessed (need zope=yes to be considered).
+acquired-members=REQUEST,acl_users,aq_parent
+
+
+# checks for :
+# * doc strings
+# * modules / classes / functions / methods / arguments / variables name
+# * number of arguments, local variables, branchs, returns and statements in
+# functions, methods
+# * required module attributes
+# * dangerous default values as arguments
+# * redefinition of function / method / class
+# * uses of the global statement
+
