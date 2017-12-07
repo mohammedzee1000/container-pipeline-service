@@ -24,6 +24,10 @@ class Project(models.Model):
     """
     name = models.CharField(max_length=200, unique=True, db_index=True)
 
+    git_url = models.CharField(max_length=200, blank=True)
+    git_path = models.CharField(max_length=200, blank=True)
+    target_file = models.CharField(max_length=100, blank=True)
+    target_file_link = models.CharField(max_length=210, blank=True)
     created = models.DateTimeField(auto_now_add=True, blank=True)
     last_updated = models.DateTimeField(auto_now=True, blank=True)
 
