@@ -11,8 +11,8 @@ from glob import glob
 import yaml
 
 from container_pipeline.lib.log import load_logger
-from container_pipeline.model_tmp.containers import (ContainerLinksModel,
-                                                     form_Dockerfile_link)
+from container_pipeline.model_tmp.containers import (ContainerLinksModel)
+from container_pipeline.lib.helpers import form_Dockerfile_link
 
 # Container Info Collector
 container_info = ContainerLinksModel()
