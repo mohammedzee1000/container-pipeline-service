@@ -1,3 +1,9 @@
+"""
+moduleauthor: The Container Pipeline Service Team
+
+This modules handles the testing and validation of the Container Index
+"""
+
 from argparse import ArgumentParser
 
 from Engine import Engine
@@ -54,7 +60,11 @@ if __name__ == '__main__':
     if cmd_args.verbose:
         verbose = True
 
-    e = Engine(index_path=index, cleanup=clean_up, verbose=verbose)
+    e = Engine(
+        index_path=index,
+        cleanup=clean_up,
+        verbose=verbose
+    )
     status, status_list, dependency_graph = e.run()
 
     if cmd_args.list:
