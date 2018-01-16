@@ -1,16 +1,20 @@
 from glob import glob
+from nuts_and_bolts import Context, StatusIterator
 from os import path
 from sys import exit
-
-from yaml import dump
-
 import validators
-from nuts_and_bolts import Context, StatusIterator
+from yaml import dump
 
 
 class Engine:
     def __init__(self, index_path="./index_path.d", cleanup=False, verbose=True):
-        """Initializes the Engine"""
+        """
+        Initializes the Engine
+        :param index_path: The path of the container index. index.d must be present at this
+        path
+        :param cleanup: If set to true, the test bench gets cleaned up at the end of run
+        :param verbose: If set, then there is more messaging done by the service.
+        """
 
         self._success = False
         self._cleanup = cleanup
@@ -25,7 +29,11 @@ class Engine:
         self._prepare_index_test_bench(index_path)
 
     def _prepare_index_test_bench(self, index_path):
-        """Copies the index files into test bench so we can modify if needed without affecting originals"""
+        """
+        Copies the index files into test bench so we can modify if needed without affecting
+        originals
+        :param index_path: This is the path where the index will be cloned
+        """
 
         if not path.exists(index_path):
             if self._context.environment.verbose:
@@ -41,24 +49,29 @@ class Engine:
             print "\nPreparing the test bench from the index files\n"
         potential_files = glob(index_path + "/*.yml")
 
-        if len(potential_files) == 0 or (len(potential_files) == 1 and "index_template.yml" in potential_files):
+        if len(potential_files) == 0 or \
+                (len(potential_files) == 1 and "index_template.yml" in potential_files):
             if self._context.environment.environment.verbose:
-                print "\nThe index.d format directory does not contain potential index files, exiting...\n"
+                print "\nThe index.d format directory does not contain potential index files," \
+                      " exiting...\n"
             exit(1)
 
         for item in potential_files:
             if "index_template" not in item:
                 if "/" in item:
                     file_name = path.split(item)[1]
-
                 else:
                     file_name = item
-
                 target_file = open(self._context.environment.test_index + "/" + file_name, "w")
                 # target_file.write("Projects:\n")
                 target_file.write(open(item, "r").read())
+                target_file.close()
 
     def run(self):
+        """
+        Run the engine
+        :return:dependency validation status, overall status and dependency graph.
+        """
 
         flags_list = []
         status_list = list()
@@ -69,11 +82,13 @@ class Engine:
         for index_path in glob(self._context.environment.test_index + "/*.yml"):
             index_file = path.basename(index_path)
 
-            status1, status_sublist1 = validators.IndexFormatValidator(self._context, index_path).run()
+            status1, status_sublist1 = validators.IndexFormatValidator(self._context, index_path)\
+                .run()
 
             if status1:
 
-                status2, status_sublist2 = validators.IndexProjectsValidator(self._context, index_path).run()
+                status2, status_sublist2 = validators.IndexProjectsValidator(self._context,
+                                                                             index_path).run()
 
                 if status2:
                     flags_list.append(True)
@@ -82,7 +97,8 @@ class Engine:
                 else:
                     flags_list.append(False)
 
-                with open(self._context.environment.generator_dir + "/" + index_file, "w+") as the_file:
+                with open(self._context.environment.generator_dir + "/" + index_file, "w+")\
+                        as the_file:
                     dump(status_sublist2, the_file)
                 status_list.append(index_file)
 
@@ -91,7 +107,8 @@ class Engine:
 
             if index_file not in status_list:
                 status_list.append(index_file)
-                with open(self._context.environment.generator_dir + "/" + index_file, "w+") as the_file:
+                with open(self._context.environment.generator_dir + "/" + index_file, "w+")\
+                        as the_file:
                     dump(status_sublist1, the_file)
         if self._context.environment.verbose:
             self._context.summary.print_summary()
@@ -108,25 +125,35 @@ class Engine:
         dep_graph = self._context.dependency_validator.dependency_graph
 
         if self._context.environment.verbose:
-            print str.format("Dependency Graph : \n\nContainers: \n{}\n\nDependencies : \n{}\n",
-                             dep_graph.get_internal_graph().nodes(data=True), dep_graph.get_internal_graph().edges())
+            print str.format(
+                "Dependency Graph : \n\nContainers: \n{}\n\nDependencies : \n{}\n",
+                dep_graph.get_internal_graph().nodes(data=True),
+                dep_graph.get_internal_graph().edges()
+            )
 
         if not dep_status and self._context.environment.verbose:
             print "DEPENDENCY ERROR : "
-            print str.format("The dependencies among the containers is found to be cyclic, please resolve the same\n"
-                             "Cycles Found : \n{}", dep_graph.get_cycles())
+            print str.format(
+                "The dependencies among the containers is found to be cyclic,"
+                " please resolve the same\n Cycles Found : \n{}",
+                dep_graph.get_cycles()
+            )
 
         return dep_status, status, self._context.dependency_validator.dependency_graph
 
     def run_light(self):
-        """Does a light run, DO NOT run the normal run, if you use this"""
+        """
+        Does a light run, DO NOT run the normal run, if you use this
+        :return Flag indicating overall success as well as dependency graph
+        """
 
         success_list = []
         success = True
         if self._context.environment.verbose:
             print "Processing the data, please wait a while...\n"
         for index_path in glob(self._context.environment.indexd_test_bench + "/*.yml"):
-            success_list.append(validators.LightWeightValidator(self._context, index_path).run())
+            success_list.append(validators.LightWeightValidator(self._context, index_path)
+                                .run())
 
         if False in success_list:
             success = False
