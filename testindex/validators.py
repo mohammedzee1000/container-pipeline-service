@@ -1,11 +1,9 @@
-import constants
-from os import path, getcwd, chdir, system
-
-from yaml import load
-
+from constants import index_keys, cccp_yml_keys
 from nuts_and_bolts import execute_command
-from summary import SummaryCollector
+from os import path, getcwd, chdir, system
 import re
+from summary import SummaryCollector
+from yaml import load
 
 
 class Validator(object):
@@ -60,8 +58,8 @@ class IndexValidator(Validator):
         temp_index_data, ex = self._load_yml(self._index_file)
 
         if temp_index_data:
-            if "Projects" in temp_index_data:
-                self._index_data = temp_index_data["Projects"]
+            if index_keys.PROJECTS in temp_index_data:
+                self._index_data = temp_index_data[index_keys.PROJECTS]
             else:
                 self._success = False
                 self._context.summary.global_errors.append("Projects absent in " + self._index_file)
@@ -109,13 +107,13 @@ class IndexFormatValidator(IndexValidator):
             self._mark_entry_valid(entry)
 
             # Check if id field exists
-            if "id" not in entry or ("id" in entry and entry["id"] is None):
+            if index_keys.ID not in entry or (index_keys.ID in entry and entry[index_keys.ID] is None):
                 self._mark_entry_invalid(entry)
                 self._summary_collector.add_error("Missing id")
 
             else:
                 # Check if id has not already been passed
-                if entry["id"] in id_list:
+                if entry[index_keys.ID] in id_list:
                     self._mark_entry_invalid(entry)
                     self._summary_collector.add_error("id field must be unique in the file")
 
@@ -123,8 +121,8 @@ class IndexFormatValidator(IndexValidator):
                     id_list.append(entry["id"])
 
             # Check for pre-build script and pre-build context
-            if constants.PREBUILD_SCRIPT in entry and entry[constants.PREBUILD_SCRIPT] is not None:
-                prebuild_path = entry.get(constants.PREBUILD_CONTEXT)
+            if index_keys.PREBUILD_SCRIPT in entry and entry[index_keys.PREBUILD_SCRIPT] is not None:
+                prebuild_path = entry.get(index_keys.PREBUILD_CONTEXT)
                 if not prebuild_path:
                     self._mark_entry_invalid(entry)
                     self._summary_collector.add_error("If pre-build script is specified,"
@@ -132,82 +130,82 @@ class IndexFormatValidator(IndexValidator):
                                                       "be specified")
 
             # Checking app-id field
-            if "app-id" not in entry or ("app-id" in entry and entry["app-id"] is None):
+            if index_keys.APP_ID not in entry or (index_keys.APP_ID in entry and entry[index_keys.APP_ID] is None):
                 self._mark_entry_invalid(entry)
                 self._summary_collector.add_error("Missing app-id")
 
             else:
-                if entry["app-id"] != self._file_name.split(".")[0]:
+                if entry[index_keys.APP_ID] != self._file_name.split(".")[0]:
                     self._mark_entry_invalid(entry)
                     self._summary_collector.add_error("app-id should be same as first part of the file name")
 
-                if "_" in entry["app-id"] or "/" in entry["app-id"] or "." in entry["app-id"]:
+                if "_" in entry[index_keys.APP_ID] or "/" in entry[index_keys.APP_ID] or "." in entry[index_keys.APP_ID]:
                     self._mark_entry_invalid(entry)
                     self._summary_collector.add_error("app-id cannot contain _, / or . character.")
 
             # Checking job-id field
-            if "job-id" not in entry or ("job-id" in entry and entry["job-id"] is None):
+            if index_keys.JOB_ID not in entry or (index_keys.JOB_ID in entry and entry[index_keys.JOB_ID] is None):
                 self._mark_entry_invalid(entry)
                 self._summary_collector.add_error("Missing job-id field")
 
             else:
                 try:
-                    int(entry["job-id"])
+                    int(entry[index_keys.JOB_ID])
                     self._mark_entry_invalid(entry)
                     self._summary_collector.add_error("Job id must be a string")
                 except ValueError:
                     pass
-                if "_" in entry["job-id"] or "/" in entry["job-id"] or "." in entry["job-id"]:
+                if "_" in entry[index_keys.JOB_ID] or "/" in entry[index_keys.JOB_ID] or "." in entry[index_keys.JOB_ID]:
                     self._mark_entry_invalid(entry)
                     self._summary_collector.add_error("job-id cannot contain _, / or . character.")
 
             # Check for git-url
-            if "git-url" not in entry or ("git-url" in entry and entry["git-url"] is None):
+            if index_keys.GIT_URL not in entry or (index_keys.GIT_URL in entry and entry[index_keys.GIT_URL] is None):
                 self._mark_entry_invalid(entry)
                 self._summary_collector.add_error("Missing git-url")
             else:
-                if "gitlab." in entry["git-url"] and not entry["git-url"].endswith(".git"):
+                if "gitlab." in entry[index_keys.GIT_URL] and not entry[index_keys.GIT_URL].endswith(".git"):
                     self._mark_entry_invalid(entry)
                     self._summary_collector.add_error("Git urls from gitlab must end with .git, try {0}.git".format(entry["git-url"]))
 
             # Checking git-path
-            if "git-path" not in entry or ("git-path" in entry and entry["git-path"] is None):
+            if index_keys.GIT_PATH not in entry or (index_keys.GIT_PATH in entry and entry[index_keys.GIT_PATH] is None):
                 self._mark_entry_invalid(entry)
                 self._summary_collector.add_error("Missing git-path")
 
             # Check git-branch
-            if "git-branch" not in entry or ("git-branch" in entry and entry["git-branch"] is None):
+            if index_keys.GIT_BRANCH not in entry or (index_keys.GIT_BRANCH in entry and entry[index_keys.GIT_BRANCH] is None):
                 self._mark_entry_invalid(entry)
                 self._summary_collector.add_error("Missing git-branch")
 
             # Check target-file
-            if "target-file" not in entry or ("target-file" in entry and entry["target-file"] is None):
+            if index_keys.TARGET_FILE not in entry or (index_keys.TARGET_FILE in entry and entry[index_keys.TARGET_FILE] is None):
                 self._mark_entry_invalid(entry)
                 self._summary_collector.add_error("Missing target-file")
 
             # Check desired-tag
-            if "desired-tag" not in entry or ("desired-tag" in entry and entry["desired-tag"] is None):
+            if index_keys.DESIRED_TAG not in entry or (index_keys.DESIRED_TAG in entry and entry[index_keys.DESIRED_TAG] is None):
                 self._mark_entry_invalid(entry)
                 self._summary_collector.add_error("Missing desired-tag")
 
             # Check for build-context
             # Ideally, build-context will be a compulsory field but for now im just checking its None
             # TODO : Need to update this to make it compulsory
-            if constants.BUILD_CONTEXT not in entry and not (constants.BUILD_CONTEXT in entry and
-                                                             entry[constants.BUILD_CONTEXT] is None):
+            if index_keys.BUILD_CONTEXT not in entry and not (index_keys.BUILD_CONTEXT in entry and
+                                                             entry[index_keys.BUILD_CONTEXT] is None):
                 pass
 
             # Check notify-email
-            if "notify-email" not in entry or ("notify-email" in entry and entry["notify-email"] is None):
+            if index_keys.NOTIFY_EMAIL not in entry or (index_keys.NOTIFY_EMAIL in entry and entry[index_keys.NOTIFY_EMAIL] is None):
                 self._mark_entry_invalid(entry)
                 self._summary_collector.add_error("Missing notify-email")
 
             # Check depends-on
-            if "depends-on" not in entry:
+            if index_keys.DEPENDS_ON not in entry:
                 self._mark_entry_invalid(entry)
                 self._summary_collector.add_error("Missing depends-on")
-            elif entry["depends-on"]:
-                depends_on = entry["depends-on"]
+            elif entry[index_keys.DEPENDS_ON]:
+                depends_on = entry[index_keys.DEPENDS_ON]
                 if not isinstance(depends_on, list):
                     depends_on = [depends_on]
                 matcher = re.compile("^(([0-9a-zA-Z_-]+[.]{1})*([0-9a-zA-Z_-]+){1}[/]{1})?[0-9a-zA-Z_-]+[/]{1}"
@@ -320,7 +318,7 @@ class IndexProjectsValidator(IndexValidator):
                 continue
 
             # * Check for duplicate entry for same container name
-            container_name = entry["app-id"] + "/" + entry["job-id"] + ":" + str(entry["desired-tag"])
+            container_name = entry[index_keys.APP_ID] + "/" + entry[index_keys.JOB_ID] + ":" + str(entry[index_keys.DESIRED_TAG])
             if container_name in container_names:
                 self._mark_entry_invalid(entry)
                 self._summary_collector.add_error(
@@ -332,8 +330,8 @@ class IndexProjectsValidator(IndexValidator):
             container_names[container_name].append(entry["id"])
 
             # * Check for build-context
-            if constants.BUILD_CONTEXT in entry:
-                build_context = entry.get(constants.BUILD_CONTEXT)
+            if index_keys.BUILD_CONTEXT in entry:
+                build_context = entry.get(index_keys.BUILD_CONTEXT)
                 if build_context and not path.exists(path.join(clone_path, git_path, build_context)):
                     self._mark_entry_invalid(entry)
                     self._summary_collector.add_error("Specified build context does not exist.")
@@ -342,10 +340,10 @@ class IndexProjectsValidator(IndexValidator):
             # TODO : Make a better implementation of pre-build script checking
             # TODO : Ideally, if prebuild is not in entry, it wont reach here and this should happen if it is not None
             prebuild_exists = False
-            if constants.PREBUILD_SCRIPT in entry and constants.PREBUILD_CONTEXT in entry:
+            if index_keys.PREBUILD_SCRIPT in entry and index_keys.PREBUILD_CONTEXT in entry:
                 prebuild_exists = True
-                prebuild_script = entry.get(constants.PREBUILD_SCRIPT)
-                prebuild_context = entry.get(constants.PREBUILD_CONTEXT)
+                prebuild_script = entry.get(index_keys.PREBUILD_SCRIPT)
+                prebuild_context = entry.get(index_keys.PREBUILD_CONTEXT)
                 if (prebuild_script and not path.exists(path.join(git_path, prebuild_script))
                     and prebuild_context and not path.exists(path.join(git_path, prebuild_context))):
                     self._mark_entry_invalid(entry)
@@ -374,13 +372,13 @@ class IndexProjectsValidator(IndexValidator):
         get_back = getcwd()
         chdir(git_path)
         # * Check for job-entry_id
-        if "job-id" not in cccp_yaml:
+        if index_keys.JOB_ID not in cccp_yaml:
             self._mark_entry_invalid(entry)
             self._summary_collector.add_error("Missing job-id field in cccp yaml")
 
         # * Check for test-skip
-        if "test-skip" in cccp_yaml:
-            value = cccp_yaml["test-skip"]
+        if cccp_yml_keys.TEST_SKIP in cccp_yaml:
+            value = cccp_yaml[cccp_yml_keys.TEST_SKIP]
 
             try:
                 if value and (value is True or value is False):
@@ -393,9 +391,9 @@ class IndexProjectsValidator(IndexValidator):
                 self._summary_collector.add_error("test-skip should either be True or False as it is a flag")
 
         # * Check test-script
-        if "test-script" in cccp_yaml:
+        if cccp_yml_keys.TEST_SCRIPT in cccp_yaml:
             self._summary_collector.add_warning("Custom test-script has been specified")
-            value = cccp_yaml["test-script"]
+            value = cccp_yaml[cccp_yml_keys.TEST_SCRIPT]
             if value and not path.exists(str(value)):
                 self._mark_entry_invalid(entry)
                 self._summary_collector.add_error("The specified test-script does not exist")
@@ -404,9 +402,9 @@ class IndexProjectsValidator(IndexValidator):
                                                     " ignored")
 
         # * Check build-script
-        if "build-script" in cccp_yaml:
+        if cccp_yml_keys.BUILD_SCRIPT in cccp_yaml:
             self._summary_collector.add_warning("Custom build-script has been specified")
-            value = cccp_yaml["build-script"]
+            value = cccp_yaml[cccp_yml_keys.BUILD_SCRIPT]
             if value and not path.exists(str(value)):
                 self._mark_entry_invalid(entry)
                 self._summary_collector.add_error("The specified build-script does not exist")
@@ -415,9 +413,9 @@ class IndexProjectsValidator(IndexValidator):
                                                     " ignored")
 
         # * Check delivery-script
-        if "delivery-script" in cccp_yaml:
+        if cccp_yml_keys.DELIVERY_SCRIPT in cccp_yaml:
             self._summary_collector.add_warning("Custom delivery-script has been specified.")
-            value = cccp_yaml["delivery-script"]
+            value = cccp_yaml[cccp_yml_keys.DELIVERY_SCRIPT]
             if value and not path.exists(str(value)):
                 self._mark_entry_invalid(entry)
                 self._summary_collector.add_error("The specified delivery-script does not exist")
@@ -445,15 +443,15 @@ class DependencyValidationUpdater(IndexValidator):
 
         for entry in self._index_data:
             # Form the container name from index yaml
-            primary_container_name = str(entry["app-id"]) + "/" + str(entry["job-id"]) + ":" + str(entry["desired-tag"])
+            primary_container_name = str(entry[index_keys.APP_ID]) + "/" + str(entry[index_keys.JOB_ID]) + ":" + str(entry[index_keys.DESIRED_TAG])
             # Add the container to dependency graph (if it does not already exist)
             self._context.dependency_validator.dependency_graph.add_container(primary_container_name, from_index=True)
             # Check if entry has any dependencies to account for
-            if entry["depends-on"]:
-                if not isinstance(entry["depends-on"], list):
-                    value = [entry["depends-on"]]
+            if entry[index_keys.DEPENDS_ON]:
+                if not isinstance(entry[index_keys.DEPENDS_ON], list):
+                    value = [entry[index_keys.DEPENDS_ON]]
                 else:
-                    value = entry["depends-on"]
+                    value = entry[index_keys.DEPENDS_ON]
                 for item in value:
                     if ":" not in item:
                         item += ":latest"
@@ -464,9 +462,9 @@ class DependencyValidationUpdater(IndexValidator):
                     self._context.dependency_validator.dependency_graph.add_dependency(str(item),
                                                                                        primary_container_name)
             # Work out the path to targetfile
-            git_branch = entry["git-branch"]
-            target_file_dir = entry["git-url"]
-            git_path = str(entry["git-path"])
+            git_branch = entry[index_keys.GIT_BRANCH]
+            target_file_dir = entry[index_keys.GIT_URL]
+            git_path = str(entry[index_keys.GIT_PATH])
             if ":" in target_file_dir:
                 # If the git-url containers :, then we dont need the protocol part, so just get the uri
                 target_file_dir = target_file_dir.split(":")[1]
@@ -474,7 +472,7 @@ class DependencyValidationUpdater(IndexValidator):
             # Example : repo_dump = /mydir, git-url = https://github.com/user/repo, git-path= /mydir
             # then final path = /mydir/github.com/user/repo/mydir
             target_file_dir = self._context.environment.repo_dump + "/" + target_file_dir
-            target_file = target_file_dir + "/" + git_path + "/" + entry["target-file"]
+            target_file = target_file_dir + "/" + git_path + "/" + entry[index_keys.TARGET_FILE]
             get_back = getcwd()
             chdir(target_file_dir)
             # Checkout required branch
@@ -507,18 +505,18 @@ class LightWeightValidator(IndexValidator):
     def run(self):
         for entry in self._index_data:
             self._summary_collector = SummaryCollector(self._context, self._file_name, entry)
-            if "git-url" not in entry or "git-branch" not in entry or "git-path" not in entry or "target-file" not in \
+            if index_keys.GIT_URL not in entry or index_keys.GIT_BRANCH not in entry or index_keys.GIT_PATH not in entry or index_keys.TARGET_FILE not in \
                     entry:
                 self._summary_collector.add_error("Missing git-url, git-path, git-branch or target-file")
                 self._success = False
                 continue
             clone_location = IndexProjectsValidator.update_git_url(self._context.environment.repo_dump,
-                                                                   entry["git-url"], entry["git-branch"])
+                                                                   entry[index_keys.GIT_URL], entry[index_keys.GIT_BRANCH])
             if not clone_location:
                 self._summary_collector.add_error("Unable to clone specified git-url or find specified git-branch")
                 self._success = False
                 continue
-            validation_path = clone_location + "/" + str(entry["git-path"]) + "/" + entry["target-file"]
+            validation_path = clone_location + "/" + str(entry[index_keys.GIT_PATH]) + "/" + entry[index_keys.TARGET_FILE]
             if not path.exists(validation_path):
                 self._summary_collector.add_error("Invalid git-path or target-file specified")
                 self._success = False
