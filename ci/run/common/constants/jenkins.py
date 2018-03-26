@@ -1,0 +1,4 @@
+
+JENKINS_HOSTNAME = "localhost"
+JENKINS_HTTP_PORT = 8080
+JENKINS_JAR_LOCATION = "/opt/jenkins-cli.jar"
