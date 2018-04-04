@@ -3,6 +3,34 @@ import select
 import subprocess
 import sys
 import jinja2
+import json
+from ci.run.common.constants.nodes import NODE_ADDRESS, NODE_KEY, NODE_NAME, \
+    NODE_USER, JENKINS_MASTER_NODE, JENKINS_SLAVE_NODE, SCANNER_NODE, \
+    OPENSHIFT_NODE, CONTROLLER_NODE, HOSTS_ENV
+
+
+class Node(object):
+
+    def __init__(self, name=None, address=None, user='root', ssh_key=None):
+        self.name = name
+        self.address = address
+        self.user = user
+        self.ssh_key = ssh_key
+
+    def marshall(self):
+        return {
+            NODE_NAME: str(self.name),
+            NODE_ADDRESS: str(self.address),
+            NODE_USER: str(self.user),
+            NODE_KEY: str(self.ssh_key)
+        }
+
+    def unmarshall(self, data):
+        self.name = data.get(NODE_NAME)
+        self.address = data.get(NODE_ADDRESS)
+        self.user = data.get(NODE_USER),
+        self.ssh_key = data.get(NODE_KEY)
+        return self
 
 
 def _print(msg):
@@ -16,18 +44,13 @@ def _print(msg):
     sys.stdout.flush()
 
 
-def run_cmd(cmd, user='root', host=None, private_key='', stream=False):
+def run_cmd(cmd, node, stream=False):
     """"
     Run the shell command
 
     Args:
-        cmd (str): Shell command to run on the given node.
-        user (str): User with which to run command. Defaults to root.
-        host (str):
-            Host to run command upon, this could be hostname or IP address.
-            Defaults to None, which means run command on local host.
-        private_key (str):
-            private key for the authentication purpose. Defaults to ''.
+        node (ci.run.common.lib.Node):
+            The node on which, the command needs to run.
         stream (bool):
             Whether stream output of command back. Defaults to False.
 
@@ -48,17 +71,17 @@ def run_cmd(cmd, user='root', host=None, private_key='', stream=False):
         'stream': stream
     })
     """
-    if host:
+    if node.address:
         private_key_args = ''
-        if private_key:
+        if node.ssh_key:
             private_key_args = '-i {path}'.format(
-                path=os.path.expanduser(private_key))
+                path=os.path.expanduser(node.ssh_key))
         _cmd = (
             "ssh -t -o UserKnownHostsFile=/dev/null -o "
             "StrictHostKeyChecking=no {private_key_args} {user}@{host} '"
             "{cmd}"
             "'"
-        ).format(user=user, cmd=cmd, host=host,
+        ).format(user=node.user, cmd=cmd, host=node.address,
                  private_key_args=private_key_args)
     else:
         _cmd = cmd
@@ -152,3 +175,41 @@ def render_j2_template(template_path, context, destination_path=None):
         return None
     return data
 
+
+def get_node_info():
+
+    cccp_ci_hosts = json.loads(
+        os.environ.get('CCCP_CI_HOSTS')
+    )
+
+    nodes = None
+
+    if cccp_ci_hosts:
+        os_node = Node().unmarshall(
+            cccp_ci_hosts.get(OPENSHIFT_NODE)
+        )
+        jenkins_master_node = Node().unmarshall(
+            cccp_ci_hosts.get(JENKINS_MASTER_NODE)
+        )
+        jenkins_slave_node = Node().unmarshall(
+            cccp_ci_hosts.get(JENKINS_SLAVE_NODE)
+        )
+        scanner_node = Node().unmarshall(
+            cccp_ci_hosts.get(SCANNER_NODE)
+        )
+        controller_node = Node().unmarshall(
+            cccp_ci_hosts.get(CONTROLLER_NODE)
+        )
+        nodes = {
+            OPENSHIFT_NODE: os_node,
+            JENKINS_MASTER_NODE: jenkins_master_node,
+            JENKINS_SLAVE_NODE: jenkins_slave_node,
+            SCANNER_NODE: scanner_node,
+            CONTROLLER_NODE: controller_node
+        }
+    return nodes
+
+
+def set_node_info(nodes):
+    if nodes:
+        os.environ[HOSTS_ENV] = json.dumps(nodes)

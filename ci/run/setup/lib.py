@@ -4,43 +4,20 @@ from ci.run.common.constants.provision import CI_PROVISION_INVENTORY, \
     CI_PROVISION_INVENTORY_TEMPL
 
 
-def setup_ssh_access(from_node, to_nodes):
-    """
-    Configures password less ssh access
-
-    Args:
-        from_node (str): The source node to have ssh access from
-        to_nodes (list):
-            List of target nodes to configure ssh access from from_node.
-    """
-    # generate a new key for from_node
-    run_cmd('rm -f ~/.ssh/id_rsa* && '
-            'ssh-keygen -t rsa -N "" -f ~/.ssh/id_rsa',
-            host=from_node)
-
-    # get the public key for from_node
-    pub_key = run_cmd('cat ~/.ssh/id_rsa.pub', host=from_node).strip()
-
-    # copy the public key of from_node to to_node(s) authorized_keys file
-    for node in to_nodes:
-        run_cmd(
-            'echo "%s" >> ~/.ssh/authorized_keys' % pub_key,
-            host=node)
-
-
 def sync_controller(controller, stream=False):
     """
     Syncs the controller host pipeline service code
 
     Args:
-        controller (str): Hostname of controller node
+        controller (ci.run.common.lib.Node): Controller node
         stream (bool): Whether to stream output of syncing
     """
     run_cmd(
         "rsync -auvr --delete "
         "-e 'ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no' "
         "%s/ root@%s:%s" % (
-            PROJECT_DIR, controller, CONTROLLER_WORK_DIR), stream=stream)
+            PROJECT_DIR, controller.address, CONTROLLER_WORK_DIR),
+        stream=stream)
 
 
 def setup_controller(controller):
@@ -48,7 +25,7 @@ def setup_controller(controller):
     Install needed packages and utilities on controller node
 
     Args:
-        controller (str): Hostname of controller node
+        controller (ci.run.common.lib.Node): Node object of controller node
     """
     # provision controller node, install required packages
     run_cmd(
@@ -60,18 +37,18 @@ def setup_controller(controller):
         "yum install -y "
         "http://cbs.centos.org/kojifiles/packages/ansible/2.2.1.0/"
         "2.el7/noarch/ansible-2.2.1.0-2.el7.noarch.rpm",
-        host=controller)
+        host=controller.address)
 
 
-def generate_ansible_inventory(jenkins_master_host, jenkins_slave_host,
-                               openshift_host, scanner_host, nfs_share):
+def generate_ansible_inventory(jenkins_master, jenkins_slave,
+                               openshift, scanner, nfs_share):
     """Generates ansible inventory text for provisioning nodes.
 
     Args:
-        jenkins_master_host (str): Hostanme of Jenkins master
-        jenkins_slave_host (str): Hostname of Jenkins slave
-        openshift_host (str): Hostname of OpenShift node
-        scanner_host (str): Hostname of scanner node
+        jenkins_master (ci.run.common.lib.Node): Jenkins master node
+        jenkins_slave (ci.run.common.lib.Node): Jenkins slave node
+        openshift (ci.run.common.lib.Node): OpenShift node
+        scanner (ci.run.common.lib.Node): Scanner node
         nfs_share (str): NFS mount path to be configured on all nodes
 
     Note:
@@ -80,13 +57,13 @@ def generate_ansible_inventory(jenkins_master_host, jenkins_slave_host,
         provisioning.
     """
 
-    test_nfs_share = scanner_host + ":" + nfs_share
+    test_nfs_share = scanner + ":" + nfs_share
 
     context = {
-        "jenkins_master_host": jenkins_master_host,
-        "jenkins_slave_host": jenkins_slave_host,
-        "openshift_host": openshift_host,
-        "scanner_host": scanner_host,
+        "jenkins_master_host": jenkins_master.address,
+        "jenkins_slave_host": jenkins_slave.address,
+        "openshift_host": openshift.address,
+        "scanner_host": scanner.address,
         "test_nfs_share": test_nfs_share
     }
     

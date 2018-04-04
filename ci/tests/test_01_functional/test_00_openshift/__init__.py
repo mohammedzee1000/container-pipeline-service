@@ -2,7 +2,7 @@ import time
 import hashlib
 
 from ci.tests.base import BaseTestCase
-from ci.lib import _print
+from ci.run.common.lib import _print
 
 
 class TestOpenshift(BaseTestCase):
@@ -13,7 +13,7 @@ class TestOpenshift(BaseTestCase):
         print "=" * 30
         print "Test if openshift builds are running"
         print "=" * 30
-        openshift_host = self.hosts['openshift']['host']
+        openshift_host = self.hosts['openshift']
         oc_config = (
             '/var/lib/origin/openshift.local.config/master/admin.kubeconfig')
         cmd = (
@@ -28,7 +28,7 @@ class TestOpenshift(BaseTestCase):
                 time.sleep(delay)
                 _print("Retries: %d/%d" % (retry_count, retries))
             try:
-                output = self.run_cmd(cmd, host=openshift_host)
+                output = self.run_cmd(cmd, node=openshift_host)
                 _print(output)
                 lines = output.splitlines()
                 pods = set([line.split()[0] for line in lines[1:]
@@ -45,22 +45,21 @@ class TestOpenshift(BaseTestCase):
         self.assertTrue(success)
 
     def test_00_openshift_builds_are_complete(self):
-        self.provision()
         self.cleanup_openshift()
         self.cleanup_beanstalkd()
         print self.run_cmd(
             'sudo java -jar /opt/jenkins-cli.jar '
             '-s http://localhost:8080 enable-job bamachrn-python-release',
-            host=self.hosts['jenkins_master']['host'])
+            node=self.hosts['jenkins_master'])
         print self.run_cmd(
             'sudo java -jar /opt/jenkins-cli.jar '
             '-s http://localhost:8080 '
             'build bamachrn-python-release -f -v',
-            host=self.hosts['jenkins_master']['host'])
+            node=self.hosts['jenkins_master'])
         print self.run_cmd(
             'sudo java -jar /opt/jenkins-cli.jar '
             '-s http://localhost:8080 disable-job bamachrn-python-release',
-            host=self.hosts['jenkins_master']['host'])
+            node=self.hosts['jenkins_master'])
 
         self.assertOsProjectBuildStatus(
             '53b1a8ddd3df5d4fd94756e8c20ae160e565a4b339bfb47165285955',
@@ -85,17 +84,17 @@ class TestOpenshift(BaseTestCase):
             'sudo java -jar /opt/jenkins-cli.jar -s '
             'http://localhost:8080 enable-job '
             'centos-kubernetes-master-latest',
-            host=self.hosts['jenkins_master']['host']))
+            node=self.hosts['jenkins_master']))
         _print(self.run_cmd(
             'sudo java -jar /opt/jenkins-cli.jar -s http://localhost:8080 '
             'build centos-kubernetes-master-latest -f -v',
-            host=self.hosts['jenkins_master']['host']
+            node=self.hosts['jenkins_master']
         ))
         _print(self.run_cmd(
             'sudo java -jar /opt/jenkins-cli.jar -s '
             'http://localhost:8080 disable-job '
             'centos-kubernetes-master-latest',
-            host=self.hosts['jenkins_master']['host']))
+            node=self.hosts['jenkins_master']))
 
         time.sleep(5)
 
@@ -106,17 +105,17 @@ class TestOpenshift(BaseTestCase):
             'sudo java -jar /opt/jenkins-cli.jar -s '
             'http://localhost:8080 enable-job '
             'centos-kubernetes-apiserver-latest',
-            host=self.hosts['jenkins_master']['host']))
+            node=self.hosts['jenkins_master']))
         _print(self.run_cmd(
             'sudo java -jar /opt/jenkins-cli.jar -s http://localhost:8080 '
             'build centos-kubernetes-apiserver-latest -f -v',
-            host=self.hosts['jenkins_master']['host']
+            node=self.hosts['jenkins_master']
         ))
         _print(self.run_cmd(
             'sudo java -jar /opt/jenkins-cli.jar -s '
             'http://localhost:8080 disable-job '
             'centos-kubernetes-apiserver-latest',
-            host=self.hosts['jenkins_master']['host']))
+            node=self.hosts['jenkins_master']))
 
         k8s_master_os_project = hashlib.sha224(
             'centos-kubernetes-master-latest').hexdigest()

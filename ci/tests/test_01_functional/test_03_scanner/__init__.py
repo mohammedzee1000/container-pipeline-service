@@ -57,7 +57,6 @@ class TestScanners(BaseTestCase):
         """
         Starts the build of a project
         """
-        self.provision()
         # create database entry for Project model for project under test
         self.run_dj_script(
             'from container_pipeline.models import Project; '
@@ -89,10 +88,10 @@ class TestScanners(BaseTestCase):
         # we need to trigger build on jenkins_slave node
         # figure out jenkins_slave hostname to run command upon
         # self.hosts variable is defined in base.py
-        jenkins_slave = self.hosts["jenkins_slave"]["host"]
+        jenkins_slave = self.hosts["jenkins_slave"]
 
         print "Starting a test build with command: \n%s" % command
-        print self.run_cmd(command, host=jenkins_slave)
+        print self.run_cmd(command, node=jenkins_slave)
 
     def check_if_file_exists(self, path):
         """
