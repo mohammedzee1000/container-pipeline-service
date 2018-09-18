@@ -265,9 +265,11 @@ class BuildConfigManager(object):
     by pipeline service
     """
 
-    def __init__(self, registry_url, namespace, from_address, smtp_server):
+    def __init__(self, registry_url, namespace, weekly_scan_namespace,
+                 from_address, smtp_server):
         self.registry_url = registry_url
         self.namespace = namespace
+        self.weekly_scan_namespace = weekly_scan_namespace
         self.from_address = from_address
         self.smtp_server = smtp_server
         self.seed_template_params = """\
@@ -424,14 +426,14 @@ class BuildConfigManager(object):
         _print(run_cmd(command))
 
     @retry(tries=10, delay=3, backoff=2)
-    def delete_buildconfigs(self, bcs):
+    def delete_buildconfigs(self, bcs, ns):
         """
         Deletes the given list of bcs
         """
         command = "oc delete -n {} bc {}"
         for bc in bcs:
             _print("Deleting buildConfig {}".format(bc))
-            run_cmd(command.format(self.namespace, bc))
+            run_cmd(command.format(ns, bc))
 
     @retry(tries=5, delay=3, backoff=2)
     def list_all_builds(self):
