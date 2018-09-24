@@ -53,7 +53,6 @@ class OpenshiftJenkinsBaseAPIClient(APIClient):
         :param namespace: The namespace of the Jenkins secret, if not mounted
         :type namespace: str
         """
-
         if not token:
             c = OpenShiftCmdClient()
             token = c.get_token_from_mounted_secret(token_from_mount)\
